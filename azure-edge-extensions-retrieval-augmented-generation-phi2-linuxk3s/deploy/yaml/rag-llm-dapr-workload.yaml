@@ -45,11 +45,11 @@ spec:
             name: aio-ca-trust-bundle-test-only
 
       imagePullSecrets:
-         - name: cctestotdata
+         - name: <>
 
       containers:
         - name: rag-llm
-          image: ccselftestacr.azurecr.io/jumpstart-rag-slm:v3
+          image: <>
           imagePullPolicy: Always
           # Remove commented out env variable if you want to override the # of logical cores in your system
           # env:
@@ -67,3 +67,19 @@ spec:
           - name: aio-ca-trust-bundle
             mountPath: /var/run/certs/aio-mq-ca-cert/
 
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: rag-llm-service
+  namespace: azure-iot-operations
+  labels:
+    app: rag-llm-dapr-workload
+spec:
+  selector:
+    app: rag-llm-dapr-workload
+  ports:
+    - protocol: TCP
+      port: 8601
+      targetPort: 8601
+  type: LoadBalancer
