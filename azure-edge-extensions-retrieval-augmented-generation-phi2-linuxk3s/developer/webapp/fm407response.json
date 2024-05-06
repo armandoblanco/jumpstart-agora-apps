@@ -1,0 +1,62 @@
+{
+    "choices": [
+      {
+        "content_filter_results": {
+          "hate": {
+            "filtered": false,
+            "severity": "safe"
+          },
+          "self_harm": {
+            "filtered": false,
+            "severity": "safe"
+          },
+          "sexual": {
+            "filtered": false,
+            "severity": "safe"
+          },
+          "violence": {
+            "filtered": false,
+            "severity": "safe"
+          }
+        },
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "Thought 1: \nTo answer this question, we need to query the \"anomalies\" measurement from the \"flowermound\" bucket. We need to filter the data to only show anomalies for line FM407 in the last 30 minutes. We can then visualize the data using a line chart.\n\nAction: \n```python\n#Import neccessary libraries here\nimport numpy as np\nimport plotly.express as px\n\n#Query some data \nflux_query = '''\nfrom(bucket: \"flowermound\")\n|> range(start: -30m)\n|> filter(fn: (r) => r[\"_measurement\"] == \"anomalies\")\n|> filter(fn: (r) => r[\"_field\"] == \"anomalyscore\")\n|> filter(fn: (r) => r._value < 0)\n|> filter(fn: (r) => r[\"line\"] == \"FM407\")\n'''\nstep1_df = execute_influxquery(flux_query)\n\n# Replace NAN with 0. Always have this step\nstep1_df = step1_df.replace(np.nan,0)\n\n#observe query result\nobserve(\"anomalies for line FM407\", step1_df) #Always use observe() instead of print\n\n#Visualize the data using a line chart\nfig = px.line(step1_df, x='_time', y='_value', title='Anomalies for line FM407 in the last 30 minutes')\nshow(fig)\n```\n\n",
+          "role": "assistant"
+        }
+      }
+    ],
+    "created": 1704980958,
+    "id": "chatcmpl-8fpio2XC8od94Wlgs7ukXJv6YTwCN",
+    "model": "gpt-35-turbo",
+    "object": "chat.completion",
+    "prompt_filter_results": [
+      {
+        "content_filter_results": {
+          "hate": {
+            "filtered": false,
+            "severity": "safe"
+          },
+          "self_harm": {
+            "filtered": false,
+            "severity": "safe"
+          },
+          "sexual": {
+            "filtered": false,
+            "severity": "safe"
+          },
+          "violence": {
+            "filtered": false,
+            "severity": "safe"
+          }
+        },
+        "prompt_index": 0
+      }
+    ],
+    "usage": {
+      "completion_tokens": 301,
+      "prompt_tokens": 1365,
+      "total_tokens": 1666
+    }
+  }
