@@ -1,0 +1,39 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 90%;
+    max-width: 600px; 
+}
+
+.image-box {
+    width: 50%;
+    height: auto; 
+    background-size: cover;
+    background-position: center;
+}
+
+.chat-history, .image-display {
+    height: 200px; 
+    overflow-y: auto; 
+    margin-bottom: 20px;
+    background-color: #f8f9fa; 
+}
+
+.image-display {
+    background-color: #e9ecef; 
+}
+
+
+input[type="text"], button {
+    margin: 5px;
+}
+
+button {
+    cursor: pointer;
+}

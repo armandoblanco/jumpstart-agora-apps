@@ -43,7 +43,7 @@ def init():
 
 # Streamlit application
 def main():
-    if Login == "True":
+    if Login == "False":
         if "password_correct" not in st.session_state:
             st.session_state.password_correct = False
         if not st.session_state["password_correct"]:

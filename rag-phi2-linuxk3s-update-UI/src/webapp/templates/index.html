@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gen AI Demo</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container text-center">
+        <img src="{{ url_for('static', filename='images/contoso.svg') }}" alt="Contoso" style="height: auto; width: 400px;">
+        <h1>Gen AI Demo</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Chat history:</h2>
+                <div class="chat-history">
+                    {% for entry in history %}
+                    <p>{{ entry }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="image-display">
+                    <!-- Images will be displayed here -->
+                </div>
+            </div>
+        </div>
+        
+        <form action="/" method="post">
+            <label for="txtQuestion">Ask question:</label>
+            <input type="text" id="txtQuestion" name="txtQuestion">
+            <button type="submit" id="btnSend">Send</button>
+        </form>
+
+        <label id="lblTypeQuestion">{{ last_response }}</label>
+
+        <form action="/reset" method="post">
+            <button type="submit">Reset Chat History</button>
+        </form>
+
+        <button id="btnFAQ1">FAQ 1</button>
+        <button id="btnFAQ2">FAQ 2</button>
+        <button id="btnFAQ3">FAQ 3</button>
+    </div>
+</body>
+</html>
