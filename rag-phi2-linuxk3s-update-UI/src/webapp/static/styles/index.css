@@ -19,10 +19,21 @@ body, html {
 }
 
 .chat-history, .image-display {
-    height: 200px; 
-    overflow-y: auto; 
+    max-height: 400px; 
+    overflow-y: scroll; 
     margin-bottom: 20px;
-    background-color: #f8f9fa; 
+    color: black;
+    padding: 0px;
+}
+
+.chat-history p:nth-child(odd) {
+    background-color: rgb(223, 220, 220); 
+    text-align: left;
+}
+
+.chat-history p:nth-child(even) {
+    background-color: rgb(154, 154, 250);  
+    text-align: left;
 }
 
 .image-display {
@@ -36,4 +47,18 @@ input[type="text"], button {
 
 button {
     cursor: pointer;
+}
+
+.scale-half {
+    transform: scale(0.8);
+    transform-origin: center;
+}
+
+.txtQuestion {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 10px;
+    text-align: left;
+    width: 800px;
 }

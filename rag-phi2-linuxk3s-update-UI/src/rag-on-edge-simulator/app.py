@@ -7,10 +7,10 @@ import time
 from datetime import datetime
 
 # InfluxDB Settings
-INFLUXDB_URL = "http://10.0.0.56:8086"
+INFLUXDB_URL = "http://10.0.0.4:8086"
 INFLUXDB_TOKEN = "secret-token"
 INFLUXDB_ORG = "InfluxData"
-INFLUXDB_BUCKET = "Manufacturing"
+INFLUXDB_BUCKET = "manufacturing"
 
 # Connect to InfluxDB
 client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)
