@@ -190,9 +190,9 @@ def chat_with_openai_for_data(question):
 
     Example Outputs:
     - If the query is: "What is the latest Drive1 Voltage at the Monterrey plant?"
-    Output: "from(bucket: 'manufacturing') |> range(start: -1m) |> filter(fn: (r) => r._measurement == 'Drive1_Voltage' and r.plant == 'Monterrey')"
+    Output: "from(bucket: "manufacturing") |> range(start: -1m) |> filter(fn: (r) => r.["_measurement"] == "Drive1_Voltage" and r[".plant"] == "Monterrey")"
     - If the query asks for: "Assembly statuses over the past two days?"
-    Output: "from(bucket: 'manufacturing') |> range(start: -48h) |> filter(fn: (r) => r._measurement == 'assembly_status')"
+    Output: "from(bucket: "manufacturing") |> range(start: -48h) |> filter(fn: (r) => r.["_measurement"] == "assembly_status")"
     - If the query is unrelated: "What is the staff's favorite lunch?"
     Output: "No data available."
 
