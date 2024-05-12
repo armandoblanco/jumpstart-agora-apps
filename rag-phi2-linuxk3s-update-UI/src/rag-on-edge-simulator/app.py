@@ -114,28 +114,10 @@ def write_data_to_influxdb(measurement_name, timestamp):
 
         write_api.write(bucket=INFLUXDB_BUCKET, record=point)
         print(f"Written data to InfluxDB: {data}")
-        
-
-def read_last_data():
-    query = f'''
-    from(bucket: "{INFLUXDB_BUCKET}")
-        |> range(start: -1h)
-        |> filter(fn: (r) => r._measurement == "factory")
-        |> last()
-    '''
-    result = query_api.query(org=INFLUXDB_ORG, query=query)
-    records = []
-    for table in result:
-        for record in table.records:
-            records.append(record.values)
-    return records
 
 
 if __name__ == "__main__":
     while True:
         write_data_to_influxdb("assemblyline", datetime.utcnow().isoformat())
-
-        last_data = read_last_data()
-        print("Last data entry:", last_data)
-        time.sleep(20)  # Write every second
+        time.sleep(60)  # Write every second
 

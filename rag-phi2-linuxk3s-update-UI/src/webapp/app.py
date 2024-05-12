@@ -163,39 +163,26 @@ def get_chart_script():
 def chat_with_openai_for_data(question):
     print("chat_with_openai_for_data")
     instructions = """
-    The user submits a query regarding the manufacturing process. Based on the query, generate an InfluxDB query for data from the 'manufacturing' bucket, considering the following data fields:
-    - Plant, Country, Assembly Line, Car ID, Model, Color, Engine Type, Assembly Status, Shift
-    - Drive1 Voltage, Drive2 Voltage, Current, Voltage, Temperature, Humidity
-    - Cooler ON, Fan001 On, Heater ON, VacuumAlert
-    - Pump1 Temperature Flow, Pump2 Temperature Flow, Pump3 Temperature Flow, Pumps Total Flow
-    - Pressure Filter Inlet, Pressure Filter Outlet
-    - RobotPosition J0 to J5
-    - Tank Level, Drive1 Current, Drive1 Frequency, Drive1 Speed
-    - Drive2 Current, Drive2 Frequency, Drive2 Speed
-    - Vacuum Pressure, Oil Temperature, Oil Temperature Target
-    - Waste, Waste Reason, Lost Time, Lost Time Reason, Lost Time Time Count
-    - Scheduled Batteries, Completed Batteries, Scheduled Batteries Per Hour
-    - Impact Test, Vibration Test, Cell Test, Down Time, Thruput, Overall Efficiency, Availability, Performance, Quality
-    - Planned Production Time, Actual Runtime, Unplanned Downtime, Planned Downtime
-    - Planned Quantity, Actual Quantity, Rejected Quantity
-    - OEE Goal by Plant, OEE Mexico, OEE Battery A, OEE Battery B, OEE Battery C
-
+    User submits a query regarding the manufacturing process. Generate an InfluxDB query for data from the 'manufacturing' bucket using the specified fields:
+    - plant, country, assembly_line, car_id, model, color, engine_type, assembly_status, shift, Drive1_Voltage, Cooler_ON, Fan001_On, Heater_ON, Pump1_Temperature_Flow, Pump2_Temperature_Flow, Pump3_Temperature_Flow, Pumps_Total_Flow, Pressure_Filter_Inlet, Pressure_Filter_Outlet, RobotPosition_J0, RobotPosition_J1, RobotPosition_J2, RobotPosition_J3, RobotPosition_J4, RobotPosition_J5, Tank_Level, Drive1_Current, Drive1_Frequency, Drive1_Speed, Drive2_Current, Drive2_Frequency, Drive2_Speed, Drive2_Voltage, Current, Voltage, Temperature, Humidity, VacuumAlert, VacuumPressure, Oiltemperature, OiltemperatureTarget, Waste, WasteReason, LostTime, LostTimeReason, LostTimeTimeCount, ScheduledBatteries, CompletedBatteries, ScheduledBatteriesPerHour, ImpactTest, VibrationTest, CellTest, DownTime, Thruput, OverallEfficiency, Availability, Performance, Quality, PlannedProductionTime, ActualRuntime, UnplannedDowntime, PlannedDowntime, PlannedQuantity, ActualQuantity, RejectedQuantity, OEE_GoalbyPlant, OEE_Mexico, OEE_BatteryA, OEE_BatteryB, OEE_BatteryC
+    
     User Query: "{question}"
 
     Instructions:
-    1. Determine if the query seeks the latest data point or data over a specific time period. If unspecified, default to data from the last hour.
-    2. Construct an InfluxDB query specific to the 'manufacturing' bucket that addresses the user's request.
-    3. If the query relates to real-time production line telemetry, Advaris, ODEN, QAD, or Quality cost, construct the query. Otherwise, indicate "No data available."
-    4. Provide the complete InfluxDB query or a response indicating data availability based on the query content.
 
+    1. Determine if the query seeks the latest data point or spans a specific time period. Default to data from the last hour if unspecified.
+    2. Construct an InfluxDB query specific to the 'manufacturing' bucket that includes ["_measurement"] == "assemblyline" and identifies the relevant _field for the query.
+    3. If the query relates to real-time production line telemetry, Advaris, ODEN, QAD, or Quality cost, create the query. Otherwise, indicate "No data available."
+    4. Provide the complete InfluxDB query or a statement on data availability.
+    5. Just give me the query.
     Example Outputs:
-    - If the query is: "What is the latest Drive1 Voltage at the Monterrey plant?"
-    Output: "from(bucket: "manufacturing") |> range(start: -1m) |> filter(fn: (r) => r.["_measurement"] == "Drive1_Voltage" and r[".plant"] == "Monterrey")"
-    - If the query asks for: "Assembly statuses over the past two days?"
-    Output: "from(bucket: "manufacturing") |> range(start: -48h) |> filter(fn: (r) => r.["_measurement"] == "assembly_status")"
-    - If the query is unrelated: "What is the staff's favorite lunch?"
-    Output: "No data available."
 
+    Query: "What is the latest Drive1 Speed at the Monterrey plant?"
+    Output: from(bucket: "manufacturing") |> range(start: -10m) |> filter(fn: (r) => r["_measurement"] == "assemblyline" |> filter(fn: (r) => r["_field"] == "Drive1_Speed") |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false) |> yield(name: "last")
+    Query: "Assembly statuses over the past two days?"
+    Output: from(bucket: "manufacturing") |> range(start: -48h) |> filter(fn: (r) => r["_measurement"] == "assemblyline" |> filter(fn: (r) => r["_field"] == "assembly_status")
+    Query: "What is the staff's favorite lunch?"
+    Output: "No data available."
     """
     response = client.completions.create(
         model="gpt-35-turbo",

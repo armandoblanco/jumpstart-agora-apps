@@ -100,8 +100,8 @@ spec:
         image: influxdb:latest
         resources:
           limits:
-            memory: "2Gi"
-            cpu: .5
+            memory: "8Gi"
+            cpu: 1
         ports:
         - name: api
           containerPort: 9999
