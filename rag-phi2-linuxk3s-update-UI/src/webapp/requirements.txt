@@ -1,2 +1,6 @@
 python-dotenv
 tabulate
+kaleido
+Flask-Session 
+redis
+

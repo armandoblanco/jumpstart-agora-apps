@@ -36,6 +36,8 @@
 
                         $('#historyContainer').animate({scrollTop: $('#historyContainer')[0].scrollHeight}, 500);
 
+                        $('#txtQuestion').val('');
+
                         var ctx = $('#myResultChart')[0].getContext('2d');
                         if (window.myChart) {
                             window.myChart.destroy(); // Destruye el gráfico existente si existe
@@ -81,15 +83,9 @@
         </div>
 
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-12"> <!-- Changed from col-md-6 to col-md-12 to take full width -->
                 <h2>Chat history:</h2>
                 <div id="historyContainer" class="chat-history"></div>
-            </div>
-            <div class="col-md-6">
-                <div style="width:600px;">
-                    <canvas id="myResultChart"></canvas>
-                </div>
-                <script src="{{ url_for('static', filename='scripts/mychart.js') }}"></script>
             </div>
         </div>
         
@@ -120,7 +116,6 @@
         <button id="btnFAQ4">How can we fix the problem with the motor of my robotic arm? Are there any guidelines or manuals?</button>
         <button id="btnFAQ5">What is the current performance of the assembly line?</button>
     </div>
-    <h2>Test</h2>
 
     <div class="chat-history">
         {% for entry in history %}

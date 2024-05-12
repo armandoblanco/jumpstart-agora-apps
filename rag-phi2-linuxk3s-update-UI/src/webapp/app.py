@@ -1,18 +1,31 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, render_template_string
 import openai
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 import os
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryOptions
-from tabulate import tabulate
+import plotly.express as px
+from io import BytesIO
+import base64
+import pandas as pd
+from flask_session import Session
+import redis
+
 import pytz
 
 app = Flask(__name__)
-app.secret_key = 'una_clave_secreta_muy_dificil_de_adivinar'  
-
+app.secret_key = 'una_clave_secreta_muy_dificil_de_adivinar' 
 
 load_dotenv()  # Load environment variables from .env file
+
+# Configure session to use Redis
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_PERMANENT'] = False  # You can set this to True if you want
+app.config['SESSION_USE_SIGNER'] = True  # If you want to sign the cookie
+app.config['SESSION_REDIS'] = redis.from_url("redis://10.0.0.4:6379")
+
+Session(app)
 
 MODEL_NAME = os.getenv("CHATGPT_MODEL")
 
@@ -60,18 +73,40 @@ conversation=[
 def execute_query_and_return_data(url, token, org, bucket, query):
     client = InfluxDBClient(url=url, token=token, org=org)
     query_api = client.query_api(query_options=QueryOptions(profilers=["query", "operator"]))
-    result = query_api.query(query=query)
-    data = []
-    for table in result:
-        for record in table.records:
-            data.append({
-                '_time': record.get_time(),
-                '_field': record.get_field(),
-                '_value': record.get_value()
-            })
+    #result = query_api.query(query=query)
     
-    client.close()
+    try:
+        result = query_api.query(query=query)    
+        data = []
+        for table in result:
+            try:
+                for record in table.records:
+                    data.append({
+                        '_time': record.get_time(),
+                        '_field': record.get_field(),
+                        '_value': record.get_value()
+                    })
+            except Exception as e:
+                print(f"Error processing record: {e}")
+                continue  # Skip to the next record
+    except Exception as e:
+        print(f"Failed to execute query: {e}")
+        data = []
+    finally:
+        client.close()
+
     return data
+
+    #data = []
+    #for table in result:
+    #    for record in table.records:
+    #        data.append({
+    #            '_time': record.get_time(),
+    #            '_field': record.get_field(),
+    #            '_value': record.get_value()
+    #        })
+    #client.close()
+    #return data
 
 def clean_string(original_string):
     return original_string.replace("Output: ", "", 1)
@@ -203,7 +238,9 @@ def generate_recommendations(question, response):
             "role": "system",
             "content": """
             I am an agent specialized in technical support for automobile manufacturing, particularly skilled in the maintenance, support, and operation of automotive assembly lines. My role is to interpret user questions with expertise, analyze production data, and provide proactive recommendations to optimize assembly line operations. Give me the Interpretation and response, including data analysis and proactive recommendations separeted in different paragraphs. Instructions:
-            1. Format should be <B>Interpretation:</B><BR/>Generated text <BR/><B>Data Analysis:</B><BR/>Generated text <BR/><B>Proactive Recommendations:</B><BR/>Generated text<BR/>."""
+            1. Avoid technological terms and explanations that the solution was built with such as InfluxDb, bucket, etc, keep it like an automotive manufacturing plant manager.
+            2. Format should be <B>Interpretation:</B><BR></BR>Generated text <BR></BR><B>Data Analysis:</B><BR></BR>Generated text <BR></BR><B>Proactive Recommendations:</B><BR></BR>Generated text<BR></BR>."""
+            
         }
     ]
 
@@ -293,6 +330,26 @@ def generate_html_table(data):
     html += '</table>'
     return html
 
+def generate_html_image(raw_data):
+    
+    data = pd.DataFrame(raw_data)
+    data['_time'] = pd.to_datetime(data['_time']).dt.strftime('%Y-%m-%d %H:%M:%S %Z')
+    data.rename(columns={'_field': 'Field', '_value': 'Value'}, inplace=True)
+    
+    # Generate the plot
+    fig = px.line(data, x='_time', y='Value', title='Time Series Data', labels={'_time': 'Time', 'Value': data['Field'][0]})
+    
+    # Convert the figure to a PNG image byte stream
+    img_bytes = fig.to_image(format="png")
+    encoded = base64.b64encode(img_bytes).decode('utf-8')  # Encode the bytes to base64 and decode to a string
+
+    # Embed the image in HTML
+    html = f'''
+    <h1>Dynamic Graph of {data['Field'][0]}</h1>
+    <img src="data:image/png;base64,{encoded}">
+    '''
+    return html
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
 
@@ -361,16 +418,10 @@ def handle_button_click():
         
     if category == "data":
         response = chat_with_openai_for_data(user_input)
-
         result = execute_query_and_return_data(INFLUXDB_URL, INFLUXDB_TOKEN, INFLUXDB_ORG, INFLUXDB_BUCKET, clean_string(response))
-
         recommendation = generate_recommendations(user_input, response)
-        
-        times, values = fetch_graph_data(result)
-        
         table_html = generate_html_table(result)
-
-        print(result)
+        plot_html = generate_html_image(result)
 
         response = f"Query: {clean_string(response)}\n\n{ table_html }"  
 
@@ -382,17 +433,17 @@ def handle_button_click():
     svg_server = "<svg width='38' height='38'><image href='/static/images/openai.png' height='38' width='38' /></svg>"
     svg_client = "<svg width='38' height='38'><image href='/static/images/user.jpeg' height='38' width='38' /></svg>"
 
-    answer = f"{response} <BR/> {recommendation}" 
+    answer = f"{response} <BR/> {recommendation} <BR?> {plot_html}" 
 
-    session['history'].append(f"<span class='question'>{svg_client} Question: {user_input} </span><span class='answer'> {svg_server} Answer: {answer}</span>")
+    session['history'].append(f"<span class='question'><B>{svg_client} Question: {user_input} </B></span><span class='answer'> {svg_server} Answer: {answer}</span>")
     session['last_response'] = category
     
-    #updated_history = session.get('history', []) + ["Nueva entrada debido a: " + button_id]
     updated_history = session.get('history', [])
     last_response = category
     
     session['history'] = updated_history
     session['last_response'] = last_response
+
     return jsonify(history=updated_history, last_response=last_response)
 
     
