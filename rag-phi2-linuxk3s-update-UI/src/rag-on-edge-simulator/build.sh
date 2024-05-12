@@ -1,5 +1,7 @@
 source simulator.env
-
+ACR=agoraarmbladev.azurecr.io
+ACRUSER=agoraarmbladev
+CONTAINER=rag-on-edge-simulator:1.1
 
 #IF you are going to use docker to build and push the container, uncomment the following lines
 echo $ACR
