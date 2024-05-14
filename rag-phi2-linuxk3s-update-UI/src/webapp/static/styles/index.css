@@ -23,11 +23,12 @@ body, html {
 }
 
 .chat-history, .image-display {
-    max-height: 400px; 
+    max-height: 900px; 
     overflow-y: scroll; 
     margin-bottom: 20px;
     color: black;
     padding: 0px;
+    text-align: left;
 }
 
 .question {
@@ -52,7 +53,7 @@ body, html {
 }
 
 .chat-history p:nth-child(even) {
-    background-color: rgb(154, 154, 250);  
+    /*background-color: rgb(208, 208, 248);  */
     display: block;
     text-align: left;
     
@@ -73,6 +74,16 @@ button {
     cursor: pointer;
 }
 
+.button-small {
+    width: 200px;  
+    height: 50px;  
+}
+
+.button-large {
+    width: 400px;  
+    height: 50px;  
+}
+
 .scale-half {
     transform: scale(.7);
     transform-origin: center;
@@ -91,10 +102,11 @@ button {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: rgb(214, 214, 214);
+    background-color: rgb(79, 77, 77);
     padding: 10px 20px; /* Ajusta el relleno según sea necesario */
     width: 100%;
     box-sizing: border-box; /* Incluye el padding y border en el ancho del elemento */
+    color: white;
 }
 
 .header-ribbon img {
@@ -105,5 +117,5 @@ button {
     flex-grow: 1;
     text-align: center;
     margin: 0; /* Elimina el margen por defecto del h1 */
-    color: black; /* O cualquier color que prefieras para el texto */
+    color: white; /* O cualquier color que prefieras para el texto */
 }

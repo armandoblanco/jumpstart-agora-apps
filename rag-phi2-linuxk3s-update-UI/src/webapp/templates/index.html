@@ -37,30 +37,6 @@
                         $('#historyContainer').animate({scrollTop: $('#historyContainer')[0].scrollHeight}, 500);
 
                         $('#txtQuestion').val('');
-
-                        var ctx = $('#myResultChart')[0].getContext('2d');
-                        if (window.myChart) {
-                            window.myChart.destroy(); // Destruye el gráfico existente si existe
-                        }
-                        window.myChart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: response.graph_data.times,
-                                datasets: [{
-                                    label: 'Temperatura del Aceite',
-                                    data: response.graph_data.values,
-                                    borderColor: 'rgba(255, 99, 132, 1)',
-                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                }]
-                            },
-                            options: {
-                                scales: {
-                                    y: {
-                                        beginAtZero: false
-                                    }
-                                }
-                            }
-                        });
                     }
                 });
             });
@@ -75,15 +51,9 @@
             <img src="{{ url_for('static', filename='images/contoso_motors.png') }}" alt="Contoso" >
             <h1>Cerebral - SmartOps Assistant</h1>
         </div>
-        <div class="container text-center scale-half">
-            <canvas id="influxChart"></canvas>
-            <script type="text/javascript">
-            {{ js_script|safe }}
-            </script>
-        </div>
 
         <div class="row">
-            <div class="col-md-12"> <!-- Changed from col-md-6 to col-md-12 to take full width -->
+            <div class="col-md-12"> 
                 <h2>Chat history:</h2>
                 <div id="historyContainer" class="chat-history"></div>
             </div>
@@ -101,33 +71,20 @@
             
 
         </form>
-        <button id="btnSend">Send</button>
+        <button id="btnSend" class="button-small">Send</button>
 
         <label id="lblTypeQuestion">{{ last_response }}</label>
         <div id="lastResponseContainer"></div>
 
         <form action="/reset" method="post">
-            <button type="submit">Reset Chat History</button>
+            <button type="submit" class="button-small">Reset Chat History</button>
         </form>
         <h3>Frequently Asked Questions (FAQ)</h3>
-        <button id="btnFAQ1">What is the last color manufactured?</button>
-        <button id="btnFAQ2">What is the Oil temperature in the last 15 minutes?</button>
-        <button id="btnFAQ3">What are the steps to maintain and change the oil in my kuka robotic arm?</button>
-        <button id="btnFAQ4">How can we fix the problem with the motor of my robotic arm? Are there any guidelines or manuals?</button>
-        <button id="btnFAQ5">What is the current performance of the assembly line?</button>
+        <button id="btnFAQ1" class="button-large">What is the last color manufactured?</button>
+        <button id="btnFAQ2" class="button-large">What is the Oil temperature in the last 15 minutes?</button>
+        <button id="btnFAQ3" class="button-large">What are the steps to maintain and change the oil in my kuka robotic arm?</button>
+        <button id="btnFAQ4" class="button-large">How can we fix the problem with the motor of my robotic arm? Are there any guidelines or manuals?</button>
+        <button id="btnFAQ5" class="button-large">What is the current performance of the assembly line?</button>
     </div>
-
-    <div class="chat-history">
-        {% for entry in history %}
-        <p>{{ entry }}</p>
-        {% endfor %}
-    </div>
-
-    <script>
-        $(document).ready(function() {
-            var chatHistory = $('.chat-history');
-            chatHistory.scrollTop(chatHistory.prop("scrollHeight"));
-        });
-    </script>
 </body>
 </html>

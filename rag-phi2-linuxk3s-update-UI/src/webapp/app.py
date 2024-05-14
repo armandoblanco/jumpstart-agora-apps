@@ -74,24 +74,35 @@ def execute_query_and_return_data(url, token, org, bucket, query):
     client = InfluxDBClient(url=url, token=token, org=org)
     query_api = client.query_api(query_options=QueryOptions(profilers=["query", "operator"]))
     #result = query_api.query(query=query)
-    
+    result = query_api.query(query=query)
+    print("Query executed successfully")
+ 
     try:
-        result = query_api.query(query=query)    
-        data = []
-        for table in result:
-            try:
-                for record in table.records:
-                    data.append({
-                        '_time': record.get_time(),
-                        '_field': record.get_field(),
-                        '_value': record.get_value()
-                    })
-            except Exception as e:
-                print(f"Error processing record: {e}")
-                continue  # Skip to the next record
+        
+        points = [point for table in result for point in table.records]
+        if len(points) == 1:
+            single_point = points[0]
+            print("Aggregation result:", single_point.get_value())
+            return single_point.get_value()
+        else:
+            # Múltiples puntos, manejo como serie de tiempo
+            #for point in points:
+            #    print(f'Time: {point.get_time()}, Value: {point.get_value()}')
+            data = []
+            for table in result:
+                try:
+                    for record in table.records:
+                        data.append({
+                            '_time': record.get_time(),
+                            '_field': record.get_field(),
+                            '_value': record.get_value()
+                        })
+                except Exception as e:
+                    print(f"Error processing record: {e}")
+                    continue  # Skip to the next record
     except Exception as e:
         print(f"Failed to execute query: {e}")
-        data = []
+        data = result
     finally:
         client.close()
 
@@ -111,29 +122,6 @@ def execute_query_and_return_data(url, token, org, bucket, query):
 def clean_string(original_string):
     return original_string.replace("Output: ", "", 1)
 
-def get_influx_data(field):
-    
-    try:
-        query = """
-        from(bucket: "manufacturing")
-        |> range(start: -1h)
-        |> filter(fn: (r) => r["_measurement"] == "assemblyline")
-        |> filter(fn: (r) => r["_field"] == "Performance" )
-
-        """
-        print("get_influx_data")
-        result = clientInfluxDb.query_api().query(query=query, org=INFLUXDB_ORG)
-        print(result)
-        data = []
-        for table in result:
-            for record in table.records:
-                data.append((record.get_time(), record.get_value()))
-
-        #print(data)
-        return data
-    except Exception as e:
-        print(f"Error retrieving InfluxDB data: {str(e)}")
-        return []
 
 def classify_question(question):
     categories = ["data", "documentation", "general"]
@@ -153,85 +141,7 @@ def classify_question(question):
 
     return response.choices[0].text.strip()
 
-def get_chart_script():
-
-    js_script = ""
-    field = "Performance"
-    result = get_influx_data(field)
-    if result:
-        times = [r[0].isoformat() for r in result]  # Convierte datetime a string ISO
-        #times = [r[0] for r in result]  # Convierte datetime a string ISO
-        values = [r[1] for r in result]
-
-        #print(times)
-        #print(values)
-
-        js_script = f"""
-             var myChart;
-            document.addEventListener('DOMContentLoaded', function () {{
-                var ctx = document.getElementById('influxChart').getContext('2d');
-                myChart = new Chart(ctx, {{
-                    type: 'line',
-                    data: {{
-                        labels: {times},
-                        datasets: [{{
-                            label: '{field}',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            data: {values}
-                        }}]
-                    }},
-                    options: {{
-                        scales: {{
-                            y: {{
-                                beginAtZero: true
-                            }}
-                        }}
-                    }}
-                }});
-            }});
-        """
-       
-        js_script1 = f"""
-         var myChart;
-        document.addEventListener('DOMContentLoaded', function () {{
-            var ctx = document.getElementById('influxChart').getContext('2d');
-            myChart = new Chart(ctx, {{
-                type: 'line',
-                data: {{
-                    labels: {times},
-                    datasets: [{{
-                        label: 'Valores de InfluxDB',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        data: {values}
-                    }}]
-                }},
-                options: {{
-                    scales: {{
-                        y: {{
-                            beginAtZero: true
-                        }},
-                        x: {{
-                            type: 'time',
-                            time: {{
-                                unit: 'minute'
-                            }},
-                            displayFormats: {{
-                                minute: 'HH:mm'
-                            }}
-                        }}
-                    }}
-                }}
-            }});
-        }});
-        """
-        #print(js_script)
-    else:
-        return ""
-    return js_script
-
-def generate_recommendations(question, response):
+def generate_recommendations(question, response, result):
 
     conversation=[
         {
@@ -244,7 +154,7 @@ def generate_recommendations(question, response):
         }
     ]
 
-    conversation.append({"role": "user", "content": f"question: {question} and data received: {response}"})
+    conversation.append({"role": "user", "content": f"question: {question} and data received: {result} and row data {response}"})
 
     response = clientRecommendations.chat.completions.create(
             model=MODEL_NAME,
@@ -273,6 +183,7 @@ def chat_with_openai_for_data(question):
             3. If the query relates to real-time production line telemetry, Advaris, ODEN, QAD, or Quality cost, create the query. Otherwise, indicate "No data available."
             4. Provide the complete InfluxDB query or a statement on data availability.
             5. Just give me the query.
+            6. Remove additional text such as comments # or " or ''' or ''' or ```
             Example Outputs:
 
             Query: "What is the latest Drive1 Speed at the Monterrey plant?"
@@ -295,7 +206,16 @@ def chat_with_openai_for_data(question):
     conversation.append({"role": "system", "content": response.choices[0].message.content})
     print(response.choices[0].message.content)
 
-    return response.choices[0].message.content
+    clean_response = clean_string(response.choices[0].message.content)
+
+    #return response.choices[0].message.content
+    return clean_response
+
+def clean_string(original_string):
+    clean_string = original_string.replace("```", "")
+    clean_string = clean_string.replace("Output:", "")
+    clean_string = clean_string.replace("Query:", "")
+    return clean_string
 
 def chat_with_local_llm(question):
     conversation.append({"role": "user", "content": question})
@@ -310,86 +230,76 @@ def chat_with_local_llm(question):
     #print(response)
     return response.choices[0].message.content
 
-def fetch_graph_data(data):
-    raw_data = data
-    times = [data['_time'].strftime("%Y-%m-%d %H:%M:%S") for data in raw_data]
-    values = [data['_value'] for data in raw_data]
-    return times, values
+#def fetch_graph_data(data):
+#    print("fetch_graph_data")
+#    raw_data = data
+#    times = [data['_time'].strftime("%Y-%m-%d %H:%M:%S") for data in raw_data]
+#    values = [data['_value'] for data in raw_data]
+#    return times, values
 
 def generate_html_table(data):
     
-    html = '<table border="1">'
-    html += '<tr><th>Time</th><th>Field</th><th>Value</th></tr>' 
+    html=""
+    print("generate_html_table")
+    print(data)
+    if isinstance(data, float):
+        return f"<B>Value is: </B> {str(data)}"
+    elif isinstance(data, str):
+        return f"<b>Value is: </b> {data}"
+    else:
+        html = '<table border="1">'
+        html += '<tr><th>Time</th><th>Field</th><th>Value</th></tr>' 
 
-    for entry in data:
-        time_str = entry['_time'].strftime('%Y-%m-%d %H:%M:%S %Z') 
-        field = entry['_field']
-        value = entry['_value']
-        html += f'<tr><td>{time_str}</td><td>{field}</td><td>{value}</td></tr>'
-    
-    html += '</table>'
+        try:
+
+            for entry in data:
+                time_str = entry['_time'].strftime('%Y-%m-%d %H:%M:%S %Z') 
+                field = entry['_field']
+                value = entry['_value']
+                html += f'<tr><td>{time_str}</td><td>{field}</td><td>{value}</td></tr>'
+            html += '</table>'
+        except Exception as e:
+            print(f"Error generating table: {e}")
+
     return html
 
 def generate_html_image(raw_data):
-    
-    data = pd.DataFrame(raw_data)
-    data['_time'] = pd.to_datetime(data['_time']).dt.strftime('%Y-%m-%d %H:%M:%S %Z')
-    data.rename(columns={'_field': 'Field', '_value': 'Value'}, inplace=True)
-    
-    # Generate the plot
-    fig = px.line(data, x='_time', y='Value', title='Time Series Data', labels={'_time': 'Time', 'Value': data['Field'][0]})
-    
-    # Convert the figure to a PNG image byte stream
-    img_bytes = fig.to_image(format="png")
-    encoded = base64.b64encode(img_bytes).decode('utf-8')  # Encode the bytes to base64 and decode to a string
+    print("generate_html_image")
+    html =""
+    try:
+        data = pd.DataFrame(raw_data)
+        data['_time'] = pd.to_datetime(data['_time']).dt.strftime('%Y-%m-%d %H:%M:%S %Z')
+        data.rename(columns={'_field': 'Field', '_value': 'Value'}, inplace=True)
+        
+        # Generate the plot
+        fig = px.line(data, x='_time', y='Value', title='Time Series Data', labels={'_time': 'Time', 'Value': data['Field'][0]})
+        
+        # Convert the figure to a PNG image byte stream
+        img_bytes = fig.to_image(format="png")
+        encoded = base64.b64encode(img_bytes).decode('utf-8')  # Encode the bytes to base64 and decode to a string
 
-    # Embed the image in HTML
-    html = f'''
-    <h1>Dynamic Graph of {data['Field'][0]}</h1>
-    <img src="data:image/png;base64,{encoded}">
-    '''
+        # Embed the image in HTML
+        html = f'''
+        <br></br><b>Dynamic Graph of {data['Field'][0]}</b><br></br>
+        <img src="data:image/png;base64,{encoded}">
+        '''
+    except Exception as e:
+        print(f"Error generating image: {e}")
+        html = "No image was generated."
     return html
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-
-    #Initial chart
-    try:
-        js_script = get_chart_script()
-    except Exception as e:
-        print(f"Error generating chart script: {str(e)}")
-        js_script = ""
-
-    #Question
-    if request.method == 'POST':
-        user_input = request.form['txtQuestion']
-        category = classify_question(user_input)
-        verbose_mode = 'chkVerbose' in request.form
-
-        print(verbose_mode)
-
-        if 'history' not in session:
-            session['history'] = []
-        
-        if category == "data":
-            response = chat_with_openai_for_data(user_input)  
-        elif category == "documentation":
-            response = chat_with_local_llm(user_input)  
-        else:
-            response = "No appropriate category was found to answer this question."
-        
-        session['history'].append(f"<span class='question'>Question: {user_input} </span><span class='answer'>Answer: {response}</span>")
-        session['last_response'] = category
-    else:
-        session['last_response'] = ""
-    
-    return render_template('index.html', history=session.get('history', []), last_response=session.get('last_response', 'Type of Question:'), js_script=js_script)
+    return render_template('index.html')
 
 @app.route('/handle_button_click', methods=['POST'])
 def handle_button_click():
     button_id = request.form['button_id']
     recommendation = ""
     question = ""
+    plot_html = ""
+    response = ""
+    influxquery=""
 
     if button_id == "btnSend":
         #question = request.form['txtQuestion']
@@ -417,13 +327,13 @@ def handle_button_click():
         session['history'] = []
         
     if category == "data":
-        response = chat_with_openai_for_data(user_input)
-        result = execute_query_and_return_data(INFLUXDB_URL, INFLUXDB_TOKEN, INFLUXDB_ORG, INFLUXDB_BUCKET, clean_string(response))
-        recommendation = generate_recommendations(user_input, response)
-        table_html = generate_html_table(result)
-        plot_html = generate_html_image(result)
+        influxquery = chat_with_openai_for_data(user_input)
+        result_data_influx = execute_query_and_return_data(INFLUXDB_URL, INFLUXDB_TOKEN, INFLUXDB_ORG, INFLUXDB_BUCKET, clean_string(influxquery))
+        recommendation = generate_recommendations(user_input, influxquery, result_data_influx)
+        table_html = generate_html_table(result_data_influx)
+        plot_html = generate_html_image(result_data_influx)
 
-        response = f"Query: {clean_string(response)}\n\n{ table_html }"  
+        response = f"{ table_html }"  
 
     elif category == "documentation":
         response = chat_with_local_llm(user_input)  
@@ -432,23 +342,17 @@ def handle_button_click():
     
     svg_server = "<svg width='38' height='38'><image href='/static/images/openai.png' height='38' width='38' /></svg>"
     svg_client = "<svg width='38' height='38'><image href='/static/images/user.jpeg' height='38' width='38' /></svg>"
-
-    answer = f"{response} <BR/> {recommendation} <BR?> {plot_html}" 
-
-    session['history'].append(f"<span class='question'><B>{svg_client} Question: {user_input} </B></span><span class='answer'> {svg_server} Answer: {answer}</span>")
-    session['last_response'] = category
     
+    answer = f"<BR/> {recommendation} <BR/> {plot_html} <BR/> {response}" 
+
+    session['history'].append(f"<span class='question'><B>{svg_client} Armando Blanco - Question: {user_input} </B></span><span class='answer'> {svg_server} Cerebral - Answer {answer}</span>")
+    session['last_response'] = f"{category}  -- {clean_string(influxquery)}"
     updated_history = session.get('history', [])
-    last_response = category
-    
+    last_response = f"{category}  -- {clean_string(influxquery)}"
     session['history'] = updated_history
     session['last_response'] = last_response
-
     return jsonify(history=updated_history, last_response=last_response)
 
-    
-
-    
 
 @app.route('/reset', methods=['POST'])
 def reset():
