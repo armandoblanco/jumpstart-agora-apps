@@ -13,6 +13,21 @@ from flask_session import Session
 import redis
 
 import pytz
+import requests
+import time
+
+# Check response for up to 500/1=500 times (500sec)
+CHECK_NUM = 500 
+CHECK_INTERVAL_SEC = 1 
+retrieval_prompt = '''Use the Content to answer the Search Query.
+
+Search Query: 
+
+SEARCH_QUERY_HERE
+
+Search Content and Answer: 
+
+'''
 
 app = Flask(__name__)
 app.secret_key = 'una_clave_secreta_muy_dificil_de_adivinar' 
@@ -66,7 +81,7 @@ conversation=[
     },
     {
         "role": "user",
-        "content": "I am having problems with my Kuka roboric arm for car hybrid assembly line, how can I reset the system?"
+        "content": "I am having problems with my Kuka robotic arm for car hybrid assembly line, how can I reset the system?"
     }
 ]
 
@@ -217,18 +232,60 @@ def clean_string(original_string):
     clean_string = clean_string.replace("Query:", "")
     return clean_string
 
-def chat_with_local_llm(question):
-    conversation.append({"role": "user", "content": question})
+def check_processed_result(request_id):
+    check_url = f'http://rag-interface-service:8701/check_processed_result/{request_id}'
+    response = requests.get(check_url)
+    
+    if response.status_code == 200:
+        result_data = response.json()
+        if result_data['status'] == 'success':
+            # CC: need to replace with webapp for displaying processed_result
+            #st.success(f"{result_data['processed_result']}")
+            return True
+    return False
 
-    response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=conversation
-        )
-    #print(response.choices[0].message.content)
-    conversation.append({"role": "system", "content": response.choices[0].message.content})
+def publish_user_input(user_input_json):
+    backend_url = 'http://rag-interface-service:8701/webpublish'
+    try:
+        response = requests.post(backend_url, json=user_input_json)
+        if response.status_code == 200:
+            #st.success(response.json()['message'])
+            request_id = response.json()['request_id']
+            # Check for processed results periodically
+            for _ in range(CHECK_NUM):  
+                if check_processed_result(request_id):
+                    break
+                time.sleep(CHECK_INTERVAL_SEC)
+        else:
+            # CC: need to replace with webapp error message
+            #st.error('Failed to publish user input to the backend')
+            pass
+            
+    except requests.RequestException as e:
+        # CC: need to replace with webapp error message
+        #st.error(f'Request failed: {e}')
+        pass
 
-    #print(response)
-    return response.choices[0].message.content
+# CC: need to replace the below code to get Index name from webapp user input, and pass to chat_with_local_llm()
+# index_names = requests.get('http://rag-vdb-service:8602/list_index_names').json()['index_names']
+# index_name = st.selectbox('Please select an index name.',index_names)
+# st.write('You selected:', index_name)
+def chat_with_local_llm(question, index_name="test-index1"):
+    #retrieval_prepped = retrieval_prompt.replace('SEARCH_QUERY_HERE',question)
+    user_input_json = {'user_query': question, 'index_name': index_name}
+    publish_user_input(user_input_json)
+
+    # conversation.append({"role": "user", "content": question})
+
+    # response = client.chat.completions.create(
+    #         model=MODEL_NAME,
+    #         messages=conversation
+    #     )
+    # #print(response.choices[0].message.content)
+    # conversation.append({"role": "system", "content": response.choices[0].message.content})
+
+    # #print(response)
+    # return response.choices[0].message.content
 
 #def fetch_graph_data(data):
 #    print("fetch_graph_data")

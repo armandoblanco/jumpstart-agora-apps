@@ -3,4 +3,7 @@ tabulate
 kaleido
 Flask-Session 
 redis
-
+openai
+influxdb
+influxdb-client
+plotly
