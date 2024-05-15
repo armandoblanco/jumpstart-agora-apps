@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2024-05-15T14:54:07Z"
+  generation: 1
+  labels:
+    app: ovms
+    chart: ovms-4.0.0
+    heritage: Helm
+    release: ovms
+  name: ovms
+  namespace: default
+  ownerReferences:
+  - apiVersion: intel.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ModelServer
+    name: ovms
+    uid: 42838e10-6c60-41ca-8d32-a8866c34c0bc
+  resourceVersion: "3034902"
+  uid: 1d3fceaa-ec14-4915-8e7c-f52e0d878fd6
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: ovms
+      release: ovms
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ovms
+        chart: ovms-4.0.0
+        heritage: Helm
+        release: ovms
+    spec:
+      containers:
+      - args:
+        - --config_path
+        - /config/config.json
+        - --log_level
+        - INFO
+        - --file_system_poll_wait_seconds
+        - "0"
+        - --grpc_workers
+        - "1"
+        - --sequence_cleaner_poll_wait_minutes
+        - "0"
+        - --port
+        - "8080"
+        - --rest_port
+        - "8081"
+        image: openvino/model_server:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /v2/health/live
+            port: rest
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: ovms
+        ports:
+        - containerPort: 8080
+          name: grpc
+          protocol: TCP
+        - containerPort: 8081
+          name: rest
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /v2/health/ready
+            port: rest
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: "1"
+            memory: 1Gi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /models
+          name: models
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: ovms-config
+        name: config
+      - name: models
+        persistentVolumeClaim:
+          claimName: ovms-pvc
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2024-05-15T14:54:17Z"
+    lastUpdateTime: "2024-05-15T14:54:17Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2024-05-15T14:54:07Z"
+    lastUpdateTime: "2024-05-15T14:54:17Z"
+    message: ReplicaSet "ovms-7d8d76946" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

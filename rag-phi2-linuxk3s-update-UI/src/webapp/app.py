@@ -357,8 +357,11 @@ def handle_button_click():
     
     svg_server = "<svg width='38' height='38'><image href='/static/images/openai.png' height='38' width='38' /></svg>"
     svg_client = "<svg width='38' height='38'><image href='/static/images/user.jpeg' height='38' width='38' /></svg>"
-    
-    answer = f"<BR/> {recommendation} <BR/> {plot_html} <BR/> {response}" 
+
+    if verbose_mode:
+        answer = f"Step 1 - Classification: {category} <BR/> Step 2 - Query: {clean_string(influxquery)} <BR/> Step 3 - Raw Data: {response} <BR/> Step 3 - Interpretation: {recommendation} Step 3 - Graph: {plot_html} <BR/> " 
+    else:
+        answer = f"<BR/> {recommendation} <BR/> {plot_html} <BR/>"
 
     session['history'].append(f"<span class='question'><B>{svg_client} Armando Blanco - Question: {user_input} </B></span><span class='answer'> {svg_server} Cerebral - Answer {answer}</span>")
     session['last_response'] = f"{category}  -- {clean_string(influxquery)}"

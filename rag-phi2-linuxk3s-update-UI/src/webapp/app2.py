@@ -341,19 +341,26 @@ def handle_button_click():
         response = f"{ table_html }"  
 
     elif category == "documentation":
-        response = chat_with_local_llm(user_input)  
+        print("Documentation")
+        response = chat_with_local_llm(user_input) 
+        print(f"Response: {response}") 
+        recommendation = response
     else:
-        response = "No appropriate category was found to answer this question."
+        recommendation = "No appropriate category was found to answer this question."
     
     svg_server = "<svg width='38' height='38'><image href='/static/images/openai.png' height='38' width='38' /></svg>"
     svg_client = "<svg width='38' height='38'><image href='/static/images/user.jpeg' height='38' width='38' /></svg>"
     
-    answer = f"<BR/> {recommendation} <BR/> {plot_html} <BR/> {response}" 
+    if verbose_mode:
+        answer = f"<h2>Step 1 - Classification:</h2> {category}  <h2>Step 2 - Query:</h2> {clean_string(influxquery)} <h2>Step 3 - Raw Data: </h2>{response}  <h2>Step 4 - Interpretation:</h2> {recommendation} <h2>Step 4 - Graph:</h2> {plot_html} " 
+    else:
+        answer = f"<BR/> {recommendation} <BR/> {plot_html} <BR/>"
 
     session['history'].append(f"<span class='question'><B>{svg_client} Armando Blanco - Question: {user_input} </B></span><span class='answer'> {svg_server} Cerebral - Answer {answer}</span>")
     session['last_response'] = f"{category}  -- {clean_string(influxquery)}"
     updated_history = session.get('history', [])
-    last_response = f"{category}  -- {clean_string(influxquery)}"
+    #last_response = f"{category}  -- {clean_string(influxquery)}"
+    last_response = ""
     session['history'] = updated_history
     session['last_response'] = last_response
     return jsonify(history=updated_history, last_response=last_response)
