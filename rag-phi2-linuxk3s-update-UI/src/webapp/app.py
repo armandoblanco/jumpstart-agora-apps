@@ -241,8 +241,8 @@ def check_processed_result(request_id):
         if result_data['status'] == 'success':
             # CC: need to replace with webapp for displaying processed_result
             #st.success(f"{result_data['processed_result']}")
-            return True
-    return False
+            return True, result_data['processed_result']
+    return False, None
 
 def publish_user_input(user_input_json):
     backend_url = 'http://rag-interface-service:8701/webpublish'
@@ -253,18 +253,19 @@ def publish_user_input(user_input_json):
             request_id = response.json()['request_id']
             # Check for processed results periodically
             for _ in range(CHECK_NUM):  
-                if check_processed_result(request_id):
-                    break
+                success, response = check_processed_result(request_id)
+                if success:
+                    return response
                 time.sleep(CHECK_INTERVAL_SEC)
         else:
             # CC: need to replace with webapp error message
             #st.error('Failed to publish user input to the backend')
-            pass
+            return None
             
     except requests.RequestException as e:
         # CC: need to replace with webapp error message
         #st.error(f'Request failed: {e}')
-        pass
+        return None
 
 # CC: need to replace the below code to get Index name from webapp user input, and pass to chat_with_local_llm()
 # index_names = requests.get('http://rag-vdb-service:8602/list_index_names').json()['index_names']
@@ -273,7 +274,8 @@ def publish_user_input(user_input_json):
 def chat_with_local_llm(question, index_name="test-index1"):
     #retrieval_prepped = retrieval_prompt.replace('SEARCH_QUERY_HERE',question)
     user_input_json = {'user_query': question, 'index_name': index_name}
-    publish_user_input(user_input_json)
+    local_llm_response = publish_user_input(user_input_json)
+    return local_llm_response
 
     # conversation.append({"role": "user", "content": question})
 
