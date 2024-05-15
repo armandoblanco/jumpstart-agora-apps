@@ -1,18 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, render_template_string
-import openai
+#import openai
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 import os
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryOptions
 import plotly.express as px
-from io import BytesIO
+#from io import BytesIO
 import base64
 import pandas as pd
 from flask_session import Session
 import redis
 
-import pytz
+#import pytz
 
 app = Flask(__name__)
 app.secret_key = 'una_clave_secreta_muy_dificil_de_adivinar' 
@@ -290,7 +290,10 @@ def generate_html_image(raw_data):
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    return render_template('index.html')
+    if 'username' in session:
+        return render_template('index.html')
+    return redirect(url_for('login'))
+    
 
 @app.route('/handle_button_click', methods=['POST'])
 def handle_button_click():
@@ -314,13 +317,15 @@ def handle_button_click():
         question = "How can we fix the problem with the motor of my robotic arm? Are there any guidelines or manuals?"
     elif button_id == "btnFAQ5": 
         question = "What is the current performance of the assembly line?"
+    elif button_id == "btnFAQ6": 
+        question = "Estoy teniendo problemas con mi cinta transportadora FHM, como puedo reemplazar los tornillos y asegurar que no esten flojos"
     else:
         question = "No question was found."
 
     user_input = question
     category = classify_question(user_input)
-    verbose_mode = 'chkVerbose' in request.form
-
+    
+    verbose_mode = request.form.get('chkVerbose') == 'true' 
     print(verbose_mode)
 
     if 'history' not in session:
@@ -358,6 +363,26 @@ def handle_button_click():
 def reset():
     session.pop('history', None)  # Clear chat history
     return redirect(url_for('home'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        # Here you should properly validate the credentials
+        if username == 'admin' and password == 'secret':  # Basic example
+            session['username'] = username
+            return redirect(url_for('home'))
+        else:
+            return 'Invalid username or password'
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('login'))
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -22,10 +22,15 @@
         $(function() {
             $("button").button().click(function() {
                 var buttonId = $(this).attr('id');
+                var isVerboseChecked = $('#chkVerbose').prop('checked');  
                 $.ajax({
                     url: '/handle_button_click',
                     type: 'POST',
-                    data: {button_id: buttonId, txtQuestion: $('#txtQuestion').val()},
+                    data: {
+                        button_id: buttonId, 
+                        txtQuestion: $('#txtQuestion').val(),
+                        chkVerbose: isVerboseChecked  
+                    },
                     success: function(response) {
                         var historyHtml = "";
                         response.history.forEach(function(item) {
@@ -50,6 +55,7 @@
         <div class="header-ribbon">
             <img src="{{ url_for('static', filename='images/contoso_motors.png') }}" alt="Contoso" >
             <h1>Cerebral - SmartOps Assistant</h1>
+            <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
         </div>
 
         <div class="row">
@@ -79,12 +85,13 @@
         <form action="/reset" method="post">
             <button type="submit" class="button-small">Reset Chat History</button>
         </form>
-        <h3>Frequently Asked Questions (FAQ)</h3>
+        <h3 class="faq">Frequently Asked Questions (FAQ)</h3>
         <button id="btnFAQ1" class="button-large">What is the last color manufactured?</button>
         <button id="btnFAQ2" class="button-large">What is the Oil temperature in the last 15 minutes?</button>
         <button id="btnFAQ3" class="button-large">What are the steps to maintain and change the oil in my kuka robotic arm?</button>
         <button id="btnFAQ4" class="button-large">How can we fix the problem with the motor of my robotic arm? Are there any guidelines or manuals?</button>
         <button id="btnFAQ5" class="button-large">What is the current performance of the assembly line?</button>
+        <button id="btnFAQ6" class="button-large">Estoy teniendo problemas con mi cinta transportadora FHM, como puedo reemplazar los tornillos y asegurar que no esten flojos</button>
     </div>
 </body>
 </html>

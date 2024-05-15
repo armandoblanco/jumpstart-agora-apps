@@ -1,6 +1,8 @@
-python-dotenv
-tabulate
-kaleido
-Flask-Session 
+Flask
+Flask-Session
 redis
+influxdb-client
+plotly
+pandas
+openai
 
