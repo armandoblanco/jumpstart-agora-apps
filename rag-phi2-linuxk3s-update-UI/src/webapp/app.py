@@ -233,7 +233,8 @@ def clean_string(original_string):
     return clean_string
 
 def check_processed_result(request_id):
-    check_url = f'http://rag-interface-service:8701/check_processed_result/{request_id}'
+    #check_url = f'http://rag-interface-service:8701/check_processed_result/{request_id}'
+    check_url = f'http://10.0.0.4:8701/check_processed_result/{request_id}'
     response = requests.get(check_url)
     
     if response.status_code == 200:
@@ -245,15 +246,19 @@ def check_processed_result(request_id):
     return False, None
 
 def publish_user_input(user_input_json):
-    backend_url = 'http://rag-interface-service:8701/webpublish'
+    #backend_url = 'http://rag-interface-service:8701/webpublish'
+    backend_url = 'http://10.0.0.4:8701/webpublish'
     try:
         response = requests.post(backend_url, json=user_input_json)
+        print(response)
         if response.status_code == 200:
             #st.success(response.json()['message'])
             request_id = response.json()['request_id']
+            print(f"Request ID: {request_id}")
             # Check for processed results periodically
             for _ in range(CHECK_NUM):  
                 success, response = check_processed_result(request_id)
+                print(f"Checking processed result: {success} {response}")
                 if success:
                     return response
                 time.sleep(CHECK_INTERVAL_SEC)
@@ -263,6 +268,7 @@ def publish_user_input(user_input_json):
             return None
             
     except requests.RequestException as e:
+        print(f'Request failed: {e}')
         # CC: need to replace with webapp error message
         #st.error(f'Request failed: {e}')
         return None
@@ -271,7 +277,10 @@ def publish_user_input(user_input_json):
 # index_names = requests.get('http://rag-vdb-service:8602/list_index_names').json()['index_names']
 # index_name = st.selectbox('Please select an index name.',index_names)
 # st.write('You selected:', index_name)
-def chat_with_local_llm(question, index_name="test-index1"):
+def chat_with_local_llm(question, index_name="cc-test2"):
+    print("chat_with_local_llm")
+    print(question)
+    print(index_name)
     #retrieval_prepped = retrieval_prompt.replace('SEARCH_QUERY_HERE',question)
     user_input_json = {'user_query': question, 'index_name': index_name}
     local_llm_response = publish_user_input(user_input_json)
@@ -359,6 +368,7 @@ def handle_button_click():
     plot_html = ""
     response = ""
     influxquery=""
+    fForceLLM = False
 
     if button_id == "btnSend":
         #question = request.form['txtQuestion']
@@ -373,6 +383,9 @@ def handle_button_click():
         question = "How can we fix the problem with the motor of my robotic arm? Are there any guidelines or manuals?"
     elif button_id == "btnFAQ5": 
         question = "What is the current performance of the assembly line?"
+    elif button_id == "btnFAQ7": 
+        question = request.form.get('txtQuestion', '')
+        fForceLLM = True
     else:
         question = "No question was found."
 
@@ -397,7 +410,11 @@ def handle_button_click():
     elif category == "documentation":
         response = chat_with_local_llm(user_input)  
     else:
-        response = "No appropriate category was found to answer this question."
+        if fForceLLM:
+            print("Force LLM")
+            response = chat_with_local_llm(user_input)
+        else:
+            response = "No appropriate category was found to answer this question."
     
     svg_server = "<svg width='38' height='38'><image href='/static/images/openai.png' height='38' width='38' /></svg>"
     svg_client = "<svg width='38' height='38'><image href='/static/images/user.jpeg' height='38' width='38' /></svg>"
