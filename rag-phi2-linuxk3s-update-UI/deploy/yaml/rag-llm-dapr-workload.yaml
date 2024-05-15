@@ -44,12 +44,12 @@ spec:
           configMap:
             name: aio-ca-trust-bundle-test-only
 
-      imagePullSecrets:
-         - name: cctestotdata
+      #imagePullSecrets:
+      #   - name: cctestotdata
 
       containers:
         - name: rag-llm
-          image: ccselftestacr.azurecr.io/jumpstart-rag-slm:v3
+          image: agoraarmbladev.azurecr.io/jumpstart-rag-slm:v1
           imagePullPolicy: Always
           # Remove commented out env variable if you want to override the # of logical cores in your system
           # env:

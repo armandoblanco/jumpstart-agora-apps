@@ -1,0 +1,6 @@
+kubectl apply -f rag-mq-components.yaml
+
+kubectl apply -f rag-vdb-dapr-workload.yaml
+kubectl apply -f rag-interface-dapr-workload.yaml
+kubectl apply -f rag-web-workload.yaml
+kubectl apply -f rag-llm-dapr-workload.yaml

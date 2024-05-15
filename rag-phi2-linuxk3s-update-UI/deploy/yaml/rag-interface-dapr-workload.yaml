@@ -44,12 +44,12 @@ spec:
           configMap:
             name: aio-ca-trust-bundle-test-only
 
-      imagePullSecrets:
-         - name: cctestotdata
+      #imagePullSecrets:
+      #   - name: cctestotdata
 
       containers:
         - name: rag-interface
-          image: ccselftestacr.azurecr.io/jumpstart-rag-interface:v1
+          image: agoraarmbladev.azurecr.io/jumpstart-rag-interface:v1
           imagePullPolicy: Always
           
         # Container for the Pub/sub component

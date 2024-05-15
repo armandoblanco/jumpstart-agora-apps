@@ -44,12 +44,12 @@ spec:
           configMap:
             name: aio-ca-trust-bundle-test-only
 
-      imagePullSecrets:
-         - name: cctestotdata
+      #imagePullSecrets:
+      #   - name: cctestotdata
 
       containers:
         - name: rag-vdb
-          image: ccselftestacr.azurecr.io/jumpstart-rag-vdb:v1
+          image: agoraarmbladev.azurecr.io/jumpstart-rag-vdb:v1
           imagePullPolicy: Always
           # livenessProbe:
           #   initialDelaySeconds: 100
