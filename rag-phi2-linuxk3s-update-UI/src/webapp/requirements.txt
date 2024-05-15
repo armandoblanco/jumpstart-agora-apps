@@ -5,4 +5,4 @@ influxdb-client
 plotly
 pandas
 openai
-
+python-dotenv

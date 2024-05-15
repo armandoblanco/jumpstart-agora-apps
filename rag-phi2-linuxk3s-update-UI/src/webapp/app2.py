@@ -17,53 +17,43 @@ import redis
 app = Flask(__name__)
 app.secret_key = 'una_clave_secreta_muy_dificil_de_adivinar' 
 
-#load_dotenv()  # Load environment variables from .env file
-
-AZURE_OPENAI_API_KEY=os.getenv("AZURE_OPENAI_API_KEY")
-CHATGPT_MODEL=os.getenv("CHATGPT_MODEL")
-AZURE_OPENAI_ENDPOINT=os.getenv("AZURE_OPENAI_ENDPOINT")
-OPENAI_API_VERSION=os.getenv("OPENAI_API_VERSION")
-INFLUXDB_URL=os.getenv("INFLUXDB_URL")
-INFLUXDB_BUCKET=os.getenv("INFLUXDB_BUCKET")
-INFLUXDB_TOKEN=os.getenv("INFLUXDB_TOKEN")
-INFLUXDB_ORG=os.getenv("INFLUXDB_ORG")
-REDIS_URL=os.getenv("REDIS_URL")
+load_dotenv()  # Load environment variables from .env file
 
 # Configure session to use Redis
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False  # You can set this to True if you want
 app.config['SESSION_USE_SIGNER'] = True  # If you want to sign the cookie
-app.config['SESSION_REDIS'] = redis.from_url(REDIS_URL)
+app.config['SESSION_REDIS'] = redis.from_url("redis://10.0.0.4:6379")
 
 Session(app)
 
-MODEL_NAME = CHATGPT_MODEL
+MODEL_NAME = os.getenv("CHATGPT_MODEL")
 
 #Classify question
 client = AzureOpenAI(
-  azure_endpoint = AZURE_OPENAI_ENDPOINT, 
-  api_key=AZURE_OPENAI_API_KEY,  
-  api_version=OPENAI_API_VERSION
+  azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
+  api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
+  api_version="2024-03-01-preview"
 )
 
 #Generate InfliuxDB query
 client2 = AzureOpenAI(
-  azure_endpoint = AZURE_OPENAI_ENDPOINT, 
-  api_key=AZURE_OPENAI_API_KEY,  
-  api_version=OPENAI_API_VERSION
+  azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
+  api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
+  api_version="2024-03-01-preview"
 )
 
 #Generate recommendations
 clientRecommendations = AzureOpenAI(
-  azure_endpoint = AZURE_OPENAI_ENDPOINT, 
-  api_key=AZURE_OPENAI_API_KEY,  
-  api_version=OPENAI_API_VERSION
+  azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
+  api_key=os.getenv("AZURE_OPENAI_API_KEY"),  
+  api_version="2024-03-01-preview"
 )
 
-#INFLUXDB_URL=INFLUXDB_URL
-#INFLUXDB_BUCKET=INFLUXDB_BUCKET
-#INFLUXDB_TOKEN=INFLUXDB_TOKEN
-#INFLUXDB_ORG=INFLUXDB_ORG
+INFLUXDB_URL=os.getenv("INFLUXDB_URL")
+INFLUXDB_BUCKET=os.getenv("INFLUXDB_BUCKET")
+INFLUXDB_TOKEN=os.getenv("INFLUXDB_TOKEN")
+INFLUXDB_ORG=os.getenv("INFLUXDB_ORG")
 
 clientInfluxDb = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)
 
