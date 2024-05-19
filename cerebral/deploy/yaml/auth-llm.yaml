@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: rag-llm-service
+  namespace: azure-iot-operations
+  labels:
+    app: rag-llm-dapr-workload
+spec:
+  selector:
+    app: rag-llm-dapr-workload
+  ports:
+    - protocol: TCP
+      port: 8601
+      targetPort: 8601
+  type: LoadBalancer

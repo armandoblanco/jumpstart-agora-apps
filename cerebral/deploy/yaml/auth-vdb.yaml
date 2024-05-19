@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: rag-vdb-service
+  namespace: azure-iot-operations
+  labels:
+    app: rag-vdb-dapr-workload
+spec:
+  selector:
+    app: rag-vdb-dapr-workload
+  ports:
+    - protocol: TCP
+      port: 8602
+      targetPort: 8602
+  type: LoadBalancer
