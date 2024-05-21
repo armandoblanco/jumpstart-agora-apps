@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-on-edge-test
+  namespace: cerebral
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag-on-edge-test
+  template:
+    metadata:
+      labels:
+        app: rag-on-edge-test
+    spec:
+      containers:
+      - name: rag-on-edge-test
+        image: agoraarmbladev.azurecr.io/rag-on-edge-test:1.5
+        

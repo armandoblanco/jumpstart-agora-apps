@@ -14,4 +14,4 @@ COPY . /app
 # Download the desired file using wget
 RUN wget -O phi-2.Q4_K_M.gguf https://huggingface.co/TheBloke/phi-2-GGUF/resolve/main/phi-2.Q4_K_M.gguf
 
-CMD ["bash"]
+CMD ["python", "keepalive.py"]
